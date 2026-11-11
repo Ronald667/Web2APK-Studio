@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web2APK Studio - Website to APK Builder</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px; background: #f4f4f9; }
+        .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+        input[type="text"], input[type="url"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        button { width: 100%; padding: 12px; background-color: #6750A4; color: white; border: none; font-size: 16px; border-radius: 6px; cursor: pointer; }
+        button:disabled { background-color: #ccc; }
+        #status { margin-top: 15px; text-align: center; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Website to Android APK Builder</h2>
+        <form id="apkForm">
+            <div class="form-group">
+                <label for="appName">App Name:</label>
+                <input type="text" id="appName" required placeholder="My Application">
+            </div>
+            <div class="form-group">
+                <label for="webUrl">Website URL:</label>
+                <input type="url" id="webUrl" required placeholder="https://example.com">
+            </div>
+            <button type="submit" id="submitBtn">Generate APK</button>
+        </form>
+        <div id="status"></div>
+    </div>
+    <script>
+        document.getElementById('apkForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('submitBtn');
+            const status = document.getElementById('status');
+                        
+            submitBtn.disabled = true;
+            status.textContent = "Compiling APK... This may take a minute.";
+            const payload = {
+                appName: document.getElementById('appName').value,
+                webUrl: document.getElementById('webUrl').value
+            };
+            try {
+                const res = await fetch('/api/build-apk', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                                
+                const data = await res.json();
+                                
+                if (data.success) {
+                    status.innerHTML = `<a href="${data.downloadUrl}" download style="color: #6750A4;">Download your APK</a>`;
+                } else {
+                    status.textContent = 'Error: ' + data.error;
+                }
+            } catch (err) {
+                status.textContent = 'Failed to connect to server.';
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
