@@ -1,0 +1,6 @@
+{
+  "name": "Web2APK Studio",
+  "description": "Convert any website into a feature-rich native Android WebView app and manage your web projects.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
