@@ -5,12 +5,12 @@ const { exec } = require('child_process');
 const { v4: uuidv4 } = require('uuid');
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/download', express.static(path.join(__dirname, 'builds')));
 
 app.post('/api/build-apk', async (req, res) => {
-    const { appName, webUrl } = req.body;
+    const { appName, webUrl, appIconBase64 } = req.body;
     if (!appName || !webUrl) {
         return res.status(400).json({ error: 'App name and URL are required.' });
     }
@@ -43,7 +43,22 @@ app.post('/api/build-apk', async (req, res) => {
             await fs.writeFile(mainActivityPath, activityContent);
         }
 
-        // 4. Execute Gradle build command to generate real APK
+        // 4. Integrate custom app icon if provided
+        if (appIconBase64) {
+            const base64Data = appIconBase64.replace(/^data:image\/png;base64,/, '');
+            const buffer = Buffer.from(base64Data, 'base64');
+            const densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
+            for (const density of densities) {
+                const mipmapDir = path.join(tempDir, `app/src/main/res/mipmap-${density}`);
+                await fs.ensureDir(mipmapDir);
+                await fs.writeFile(path.join(mipmapDir, 'ic_launcher.png'), buffer);
+                await fs.writeFile(path.join(mipmapDir, 'ic_launcher_round.png'), buffer);
+                await fs.remove(path.join(mipmapDir, 'ic_launcher.webp')).catch(() => {});
+                await fs.remove(path.join(mipmapDir, 'ic_launcher_round.webp')).catch(() => {});
+            }
+        }
+
+        // 5. Execute Gradle build command to generate real APK
         const gradlewCmd = process.platform === 'win32' ? 'gradlew.bat' : 'gradle';
 
         exec(`${gradlewCmd} :app:assembleDebug`, { cwd: tempDir }, async (error, stdout, stderr) => {

@@ -9,7 +9,7 @@
         .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .form-group { margin-bottom: 15px; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
-        input[type="text"], input[type="url"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
+        input[type="text"], input[type="url"], input[type="file"] { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; }
         button { width: 100%; padding: 12px; background-color: #6750A4; color: white; border: none; font-size: 16px; border-radius: 6px; cursor: pointer; }
         button:disabled { background-color: #ccc; }
         #status { margin-top: 15px; text-align: center; font-weight: bold; }
@@ -27,6 +27,10 @@
                 <label for="webUrl">Website URL:</label>
                 <input type="url" id="webUrl" required placeholder="https://example.com">
             </div>
+            <div class="form-group">
+                <label for="appIcon">App Icon (PNG):</label>
+                <input type="file" id="appIcon" accept="image/png">
+            </div>
             <button type="submit" id="submitBtn">Generate APK</button>
         </form>
         <div id="status"></div>
@@ -36,13 +40,26 @@
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
             const status = document.getElementById('status');
-                        
+            const iconFile = document.getElementById('appIcon').files[0];
+            
             submitBtn.disabled = true;
-            status.textContent = "Compiling APK... This may take a minute.";
+            status.textContent = "Compiling APK with custom icon... This may take a minute.";
+
+            let iconBase64 = null;
+            if (iconFile) {
+                iconBase64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.readAsDataURL(iconFile);
+                });
+            }
+
             const payload = {
                 appName: document.getElementById('appName').value,
-                webUrl: document.getElementById('webUrl').value
+                webUrl: document.getElementById('webUrl').value,
+                appIconBase64: iconBase64
             };
+
             try {
                 const res = await fetch('/api/build-apk', {
                     method: 'POST',
